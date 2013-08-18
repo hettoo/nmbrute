@@ -46,23 +46,28 @@ void bruteforce(int start_year, int end_year) {
     serial[0] = 'C';
     serial[1] = 'P';
 
-    for (int year = start_year; year <= end_year; year++) {
+    int year;
+    for (year = start_year; year <= end_year; year++) {
         serial[2] = (year / 10) | '0';
         serial[3] = (year % 10) | '0';
 
-        for (int week = 1; week <= WEEKS_PER_YEAR; week++) {
+        int week;
+        for (week = 1; week <= WEEKS_PER_YEAR; week++) {
             serial[4] = (week / 10) + '0';
             serial[5] = (week % 10) + '0';
 
-            for (int x1 = 0; x1 < ALPHANUMERIC_COUNT; x1++) {
+            int x1;
+            for (x1 = 0; x1 < ALPHANUMERIC_COUNT; x1++) {
                 serial[6] = HEXMSB(ALPHANUMERICS[x1]);
                 serial[7] = HEXLSB(ALPHANUMERICS[x1]);
 
-                for (int x2 = 0; x2 < ALPHANUMERIC_COUNT; x2++) {
+                int x2;
+                for (x2 = 0; x2 < ALPHANUMERIC_COUNT; x2++) {
                     serial[8] = HEXMSB(ALPHANUMERICS[x2]);
                     serial[9] = HEXLSB(ALPHANUMERICS[x2]);
 
-                    for (int x3 = 0; x3 < ALPHANUMERIC_COUNT; x3++) {
+                    int x3;
+                    for (x3 = 0; x3 < ALPHANUMERIC_COUNT; x3++) {
                         serial[10] = HEXMSB(ALPHANUMERICS[x3]);
                         serial[11] = HEXLSB(ALPHANUMERICS[x3]);
 
@@ -75,7 +80,8 @@ void bruteforce(int start_year, int end_year) {
 
                         if (memcmp(&hash[SHA_DIGEST_LENGTH - ssid_length],
                                     &ssid, ssid_length) == 0) {
-                            for (int i = 0; i < DEFAULT_KEY_SIZE; i++)
+                            int i;
+                            for (i = 0; i < DEFAULT_KEY_SIZE; i++)
                                 printf("%.2X", hash[i]);
                             puts("");
                         }
@@ -97,7 +103,8 @@ int main(int argc, char *argv[]) {
         fprintf(stderr, "Invalid SSID length\n");
         return 1;
     }
-    for (size_t i = 0; i < hex_ssid_length; i++) {
+    size_t i;
+    for (i = 0; i < hex_ssid_length; i++) {
         if (!isxdigit(argv[1][i])) {
             fprintf(stderr, "Invalid SSID\n");
             return 1;

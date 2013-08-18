@@ -1,6 +1,6 @@
 CC = gcc
 DEBUG = -g
-CFLAGS = -O2 -Wall -c -std=c99 $(DEBUG)
+CFLAGS = -O2 -Wall -c $(DEBUG)
 LFLAGS = -O2 -Wall -lm -l crypto $(DEBUG)
 
 PROGRAM = stkeys
