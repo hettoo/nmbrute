@@ -18,13 +18,10 @@ GetOptions(
 
 my $stkeys = 'build/stkeys';
 if (!-e $stkeys) {
-    $stkeys .= '.exe';
+    $stkeys = `which stkeys`;
+    chomp $stkeys;
     if (!-e $stkeys) {
-        $stkeys = `which stkeys`;
-        chomp $stkeys;
-        if (!-e $stkeys) {
-            die 'unable to find stkeys, run make first';
-        }
+        die 'unable to find stkeys, run make first';
     }
 }
 
