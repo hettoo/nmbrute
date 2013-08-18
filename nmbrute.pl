@@ -8,15 +8,22 @@ use Getopt::Long;
 use autodie;
 
 my $auto_delay = 3;
+my $year_offset = 2000;
 
 my $auto = 0;
 my $daemon = 0;
+my $start_year = 2000;
+my $end_year = 2012;
 my $blacklist = '';
 GetOptions(
     'h|help' => \&help,
     'a|auto' => \$auto,
     'd|daemon' => \$daemon,
+    's|start-year=i' => \$start_year,
+    'e|end-year=i' => \$end_year,
     'b|blacklist=s' => \$blacklist);
+$start_year -= $year_offset;
+$end_year -= $year_offset;
 my @blacklist = split /,/, $blacklist;
 
 my $stkeys = 'build/stkeys';
@@ -118,7 +125,7 @@ sub quit {
 }
 
 sub help {
-    say "usage: $0 [--auto] [--daemon] [--blacklist comma-separated-ssids]";
+    say "usage: $0 [--auto] [--daemon] [--start-year year] [--end-year year] [--blacklist comma-separated-ssids]";
     exit;
 }
 
@@ -164,14 +171,13 @@ sub force_connect_network {
         if ($password ne '') {
             say 'invalid password';
         }
-    }
-    if (!defined $code) {
+    } elsif (!defined $code) {
         say 'no hash substring found in the ssid';
         return 0;
     }
     say 'generating passwords...';
     my $count = 0;
-    open my $sth, '-|', "$stkeys $code";
+    open my $sth, '-|', "$stkeys $code $start_year $end_year";
     while (my $password = <$sth>) {
         chomp $password;
         say "trying password $password...";
