@@ -11,10 +11,13 @@ my $auto_delay = 3;
 
 my $auto = 0;
 my $daemon = 0;
+my $blacklist = '';
 GetOptions(
     'h|help' => \&help,
     'a|auto' => \$auto,
-    'd|daemon' => \$daemon);
+    'd|daemon' => \$daemon,
+    'b|blacklist=s' => \$blacklist);
+my @blacklist = split /,/, $blacklist;
 
 my $stkeys = 'build/stkeys';
 if (!-e $stkeys) {
@@ -52,6 +55,7 @@ while (1) {
                 sleep $auto_delay;
                 next;
             } else {
+                say 'already connected';
                 last;
             }
         }
@@ -114,7 +118,7 @@ sub quit {
 }
 
 sub help {
-    say "usage: $0 [--auto] [--daemon]";
+    say "usage: $0 [--auto] [--daemon] [--blacklist comma-separated-ssids]";
     exit;
 }
 
@@ -166,14 +170,20 @@ sub force_connect_network {
         return 0;
     }
     say 'generating passwords...';
+    my $count = 0;
     open my $sth, '-|', "$stkeys $code";
     while (my $password = <$sth>) {
         chomp $password;
-        say "trying $password...";
+        say "trying password $password...";
         if (test_nm("dev wifi connect $bssid password $password") == 0) {
             say "$ssid has password $password";
             return 1;
         }
+        $count++;
+    }
+    close $sth;
+    if ($count == 0) {
+        say 'no passwords generated';
     }
     return 0;
 }
@@ -185,6 +195,20 @@ sub test_nm {
 
 sub sort_networks {
     my(@networks) = @_;
+    my @backup = @networks;
+    @networks = ();
+    for my $network(@backup) {
+        my $found = 0;
+        for my $bad(@blacklist) {
+            if ($network->{SSID} eq $bad) {
+                $found = 1;
+                last;
+            }
+        }
+        if (!$found) {
+            push @networks, $network;
+        }
+    }
     return sort {$b->{SIGNAL} <=> $a->{SIGNAL} || $a->{SSID} cmp $b->{SSID}} @networks;
 }
 
