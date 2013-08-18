@@ -7,7 +7,7 @@ use feature 'say';
 use Getopt::Long;
 use autodie;
 
-my $auto_greedy_sleep = 2;
+my $auto_greedy_sleep = 3;
 
 my $auto = 0;
 my $greedy = 0;
@@ -77,12 +77,13 @@ while (1) {
         }
     } else {
         my $i = 0;
+        say 'ID SSID RATE SIGNAL [SECURITY] ACTIVE';
         for my $network (@networks) {
             say "$i $network->{SSID}: $network->{RATE} $network->{SIGNAL}"
                 . " [$network->{SECURITY}] $network->{ACTIVE}";
             $i++;
         }
-        my $target = get('network');
+        my $target = get('network id');
         if ($target >= 0 && $target < @networks) {
             my $network = $networks[$target];
             if ($done && $network->{BSSID} eq $done_bssid) {
