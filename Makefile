@@ -20,7 +20,7 @@ clean:
 	rm -rf $(BUILD)
 
 $(BUILD)$(PROGRAM): $(OBJS)
-	$(CC) $(LFLAGS) $(OBJS) -o $@
+	$(CC) $(OBJS) -o $@ $(LFLAGS)
 
 define module_depender
 $(shell mkdir -p $(BUILD))
@@ -33,7 +33,7 @@ endef
 
 define module_compiler
 $(BUILD)$(1).o: $(SOURCE)$(1).c $(THIS)
-	$(CC) $(CFLAGS) $$< -o $$@
+	$(CC) $$< -o $$@ $(CFLAGS)
 endef
 
 $(foreach module, $(MODULES), $(eval $(call module_depender,$(module))))
