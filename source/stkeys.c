@@ -1,3 +1,7 @@
+/*
+ * Based on the code by Kevin Devine.
+ */
+
 #include <stdio.h>
 #include <stdlib.h>
 #include <stdint.h>
