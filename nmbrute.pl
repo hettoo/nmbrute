@@ -4,6 +4,7 @@ use strict;
 use warnings;
 
 use Getopt::Long;
+use autodie;
 
 my $auto = 0;
 my $greedy = 0;
@@ -33,42 +34,58 @@ if (!-e $nm) {
 my $applet_running = !system 'killall nm-applet';
 @SIG{'INT', 'TERM', 'SEGV'} = \&quit;
 
-my $done = 0;
-my %blacklist;
-while (!$done) {
+while (1) {
     my @networks = sort_networks(query_nm('dev wifi',
         'SSID', 'BSSID', 'RATE', 'SIGNAL', 'SECURITY', 'ACTIVE'));
     if ($auto) {
-        $done = 1;
+        my $done = 0;
+        for my $network (@networks) {
+            if ($network->{ACTIVE} eq 'yes') {
+                $done = 1;
+                last;
+            }
+        }
+        if ($done) {
+            if ($greedy) {
+                next;
+            } else {
+                last;
+            }
+        }
         for my $network (@networks) {
             my $last = $network == $networks[$#networks];
             my $ssid = $network->{SSID};
             my $bssid = $network->{BSSID};
             my $security = $network->{SECURITY};
-            if (!$blacklist{$bssid}
-                && ($security eq '' || defined ssid_code($ssid))) {
+            if ($security eq '' || defined ssid_code($ssid)) {
                 if (force_connect_network($network, 0)) {
-                    $done = !$greedy || $last;
-                } else {
-                    $done = $last;
+                    $done = 1;
+                    last;
                 }
-                $blacklist{$bssid} = 1;
+            }
+        }
+        if ($done) {
+            if ($greedy) {
+                next;
+            } else {
                 last;
             }
         }
     } else {
         my $i = 0;
         for my $network (@networks) {
-            my $active = $network->{ACTIVE} eq 'yes' ? 'active' : '';
             print "$i $network->{SSID}: $network->{RATE} $network->{SIGNAL}"
                 . " [$network->{SECURITY}] $network->{ACTIVE}\n";
             $i++;
         }
         my $target = get("network");
-        if ($target < @networks) {
-            $done = force_connect_network($networks[$target], 1);
-            if ($greedy) {
-                $done = 0;
+        if ($target >= 0 && $target < @networks) {
+            if (force_connect_network($networks[$target], 1)) {
+                if ($greedy) {
+                    next;
+                } else {
+                    last;
+                }
             }
         }
     }
@@ -132,8 +149,9 @@ sub force_connect_network {
         return 0;
     }
     print "generating keys...\n";
-    my @keys = split "\n", `$stkeys $code`;
-    for my $key (@keys) {
+    open my $sth, '-|', "$stkeys $code";
+    while (my $key = <$sth>) {
+        chomp $key;
         print "trying $key...\n";
         if (test_nm("dev wifi connect $bssid password $key") == 0) {
             print "$ssid has key $key\n";
