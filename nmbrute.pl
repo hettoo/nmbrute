@@ -7,14 +7,14 @@ use feature 'say';
 use Getopt::Long;
 use autodie;
 
-my $auto_greedy_sleep = 3;
+my $auto_daemon_sleep = 3;
 
 my $auto = 0;
-my $greedy = 0;
+my $daemon = 0;
 GetOptions(
     'h|help' => \&help,
     'a|auto' => \$auto,
-    'g|greedy' => \$greedy);
+    'd|daemon' => \$daemon);
 
 my $stkeys = 'build/stkeys';
 if (!-e $stkeys) {
@@ -48,8 +48,8 @@ while (1) {
     }
     if ($auto) {
         if ($done) {
-            if ($greedy) {
-                sleep $auto_greedy_sleep;
+            if ($daemon) {
+                sleep $auto_daemon_sleep;
                 next;
             } else {
                 last;
@@ -67,14 +67,10 @@ while (1) {
                 }
             }
         }
-        if ($done) {
-            if ($greedy) {
-                sleep $auto_greedy_sleep;
-                next;
-            } else {
-                last;
-            }
+        if ($done && !$daemon) {
+            last;
         }
+        sleep $auto_daemon_sleep;
     } else {
         my $i = 0;
         say 'ID SSID RATE SIGNAL [SECURITY] ACTIVE';
@@ -88,14 +84,14 @@ while (1) {
             my $network = $networks[$target];
             if ($done && $network->{BSSID} eq $done_bssid) {
                 say 'already connected to this network';
-                if ($greedy) {
+                if ($daemon) {
                     next;
                 } else {
                     last;
                 }
             }
             if (force_connect_network($network, 1)) {
-                if ($greedy) {
+                if ($daemon) {
                     next;
                 } else {
                     last;
@@ -115,7 +111,7 @@ sub quit {
 }
 
 sub help {
-    say "usage: $0 [--auto] [--greedy]";
+    say "usage: $0 [--auto] [--daemon]";
     exit;
 }
 
@@ -149,17 +145,21 @@ sub force_connect_network {
         return 0;
     }
     my $code = ssid_code($ssid);
-    if (!defined $code) {
-        if ($manual) {
-            my $password = get('password');
-            if ($password ne '' && test_nm("dev wifi connect $bssid password $password") == 0) {
-                say "$ssid has password $password";
-                return 1;
-            }
-            say 'invalid password';
-        } else {
-            say 'no hash substring found in the SSID';
+    if ($manual) {
+        if (defined $code) {
+            say 'leave the password empty to generate keys instead';
         }
+        my $password = get('password');
+        if ($password ne '' && test_nm("dev wifi connect $bssid password $password") == 0) {
+            say "$ssid has password $password";
+            return 1;
+        }
+        if ($password ne '') {
+            say 'invalid password';
+        }
+    }
+    if (!defined $code) {
+        say 'no hash substring found in the ssid';
         return 0;
     }
     say 'generating passwords...';
