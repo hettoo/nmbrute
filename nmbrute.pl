@@ -2,9 +2,12 @@
 
 use strict;
 use warnings;
+use feature 'say';
 
 use Getopt::Long;
 use autodie;
+
+my $auto_greedy_sleep = 2;
 
 my $auto = 0;
 my $greedy = 0;
@@ -36,17 +39,20 @@ my $applet_running = !system 'killall nm-applet';
 
 while (1) {
     my @networks = sort_networks(query_nm('dev wifi',
-        'SSID', 'BSSID', 'RATE', 'SIGNAL', 'SECURITY', 'ACTIVE'));
-    if ($auto) {
-        my $done = 0;
-        for my $network (@networks) {
-            if ($network->{ACTIVE} eq 'yes') {
-                $done = 1;
-                last;
-            }
+            'SSID', 'BSSID', 'RATE', 'SIGNAL', 'SECURITY', 'ACTIVE'));
+    my $done = 0;
+    my $done_bssid;
+    for my $network (@networks) {
+        if ($network->{ACTIVE} eq 'yes') {
+            $done = 1;
+            $done_bssid = $network->{BSSID};
+            last;
         }
+    }
+    if ($auto) {
         if ($done) {
             if ($greedy) {
+                sleep $auto_greedy_sleep;
                 next;
             } else {
                 last;
@@ -66,6 +72,7 @@ while (1) {
         }
         if ($done) {
             if ($greedy) {
+                sleep $auto_greedy_sleep;
                 next;
             } else {
                 last;
@@ -74,13 +81,22 @@ while (1) {
     } else {
         my $i = 0;
         for my $network (@networks) {
-            print "$i $network->{SSID}: $network->{RATE} $network->{SIGNAL}"
-                . " [$network->{SECURITY}] $network->{ACTIVE}\n";
+            say "$i $network->{SSID}: $network->{RATE} $network->{SIGNAL}"
+                . " [$network->{SECURITY}] $network->{ACTIVE}";
             $i++;
         }
-        my $target = get("network");
+        my $target = get('network');
         if ($target >= 0 && $target < @networks) {
-            if (force_connect_network($networks[$target], 1)) {
+            my $network = $networks[$target];
+            if ($done && $network->{BSSID} eq $done_bssid) {
+                say 'already connected to this network';
+                if ($greedy) {
+                    next;
+                } else {
+                    last;
+                }
+            }
+            if (force_connect_network($network, 1)) {
                 if ($greedy) {
                     next;
                 } else {
@@ -101,7 +117,7 @@ sub quit {
 }
 
 sub help {
-    print "usage: $0 [--auto] [--greedy]\n";
+    say "usage: $0 [--auto] [--greedy]";
     exit;
 }
 
@@ -126,10 +142,10 @@ sub force_connect_network {
     my $ssid = $network->{SSID};
     my $bssid = $network->{BSSID};
     my $security = $network->{SECURITY};
-    print "trying to connect to $ssid ($bssid)\n";
+    say "trying to connect to $ssid ($bssid)";
     if ($security eq '') {
         if (test_nm("dev wifi connect '$ssid'") == 0) {
-            print "$ssid is unprotected\n";
+            say "$ssid is unprotected";
             return 1;
         }
         return 0;
@@ -137,24 +153,24 @@ sub force_connect_network {
     my $code = ssid_code($ssid);
     if (!defined $code) {
         if ($manual) {
-            my $password = get("password");
+            my $password = get('password');
             if ($password ne '' && test_nm("dev wifi connect $bssid password $password") == 0) {
-                print "$ssid has key $password\n";
+                say "$ssid has password $password";
                 return 1;
             }
-            print "invalid key\n";
+            say 'invalid password';
         } else {
-            print "no hash substring found in the SSID\n";
+            say 'no hash substring found in the SSID';
         }
         return 0;
     }
-    print "generating keys...\n";
+    say 'generating passwords...';
     open my $sth, '-|', "$stkeys $code";
-    while (my $key = <$sth>) {
-        chomp $key;
-        print "trying $key...\n";
-        if (test_nm("dev wifi connect $bssid password $key") == 0) {
-            print "$ssid has key $key\n";
+    while (my $password = <$sth>) {
+        chomp $password;
+        say "trying $password...";
+        if (test_nm("dev wifi connect $bssid password $password") == 0) {
+            say "$ssid has password $password";
             return 1;
         }
     }
