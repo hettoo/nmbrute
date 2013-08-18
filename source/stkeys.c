@@ -105,11 +105,11 @@ int main(int argc, char *argv[]) {
     int start_year;
     int end_year;
     if (argc < 3)
-        start_year = 0;
+        start_year = 2;
     else
         start_year = atoi(argv[2]);
     if (argc < 4)
-        end_year = 12;
+        end_year = 10;
     else
         end_year = atoi(argv[3]);
 

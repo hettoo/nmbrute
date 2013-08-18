@@ -14,7 +14,7 @@ MODULES = $(patsubst $(SOURCE)%.c,%,$(CFILES))
 OBJS = $(addprefix $(BUILD),$(addsuffix .o,$(MODULES)))
 $(shell mkdir -p $(BUILD))
 
-default: $(BUILD)$(PROGRAM)
+all: $(BUILD)$(PROGRAM)
 
 clean:
 	rm -rf $(BUILD)
@@ -39,4 +39,4 @@ endef
 $(foreach module, $(MODULES), $(eval $(call module_depender,$(module))))
 $(foreach module, $(MODULES), $(eval $(call module_compiler,$(module))))
 
-.PHONY: default clean
+.PHONY: all clean
