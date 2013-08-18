@@ -7,7 +7,7 @@ use feature 'say';
 use Getopt::Long;
 use autodie;
 
-my $auto_daemon_sleep = 3;
+my $auto_delay = 3;
 
 my $auto = 0;
 my $daemon = 0;
@@ -49,7 +49,7 @@ while (1) {
     if ($auto) {
         if ($done) {
             if ($daemon) {
-                sleep $auto_daemon_sleep;
+                sleep $auto_delay;
                 next;
             } else {
                 last;
@@ -70,17 +70,20 @@ while (1) {
         if ($done && !$daemon) {
             last;
         }
-        sleep $auto_daemon_sleep;
+        sleep $auto_delay;
     } else {
         my $i = 0;
         say 'ID SSID RATE SIGNAL [SECURITY] ACTIVE';
+        if (@networks == 0) {
+            say 'no networks found, use enter to try again';
+        }
         for my $network (@networks) {
             say "$i $network->{SSID}: $network->{RATE} $network->{SIGNAL}"
                 . " [$network->{SECURITY}] $network->{ACTIVE}";
             $i++;
         }
         my $target = get('network id');
-        if ($target >= 0 && $target < @networks) {
+        if ($target ne '' && $target >= 0 && $target < @networks) {
             my $network = $networks[$target];
             if ($done && $network->{BSSID} eq $done_bssid) {
                 say 'already connected to this network';
